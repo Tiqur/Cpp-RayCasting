@@ -17,15 +17,29 @@ Get color from bounce
 color changer
 configuration (clear all, FOV, etc)
 remove barriers
+Make more dynamic
 
 Normals
 Reflection
 transparency
-
 */
 
 
+/*
+BUGS:
 
+Direction ray can be offset
+Fisheye effect due to using euclidean distance
+Color isn't correctly altered based on distance
+Bottom rect height for 3D projection
+*/
+
+
+/*
+Enabled it to run on any pc by making it static
+
+
+*/
 
 const int startingPosX = 225;
 const int startingPosY = 250;
@@ -40,8 +54,9 @@ const olc::Pixel backgroundColor = olc::BLACK;
 const olc::Pixel wallColor = olc::MAGENTA;
 const olc::Pixel barrierColor = olc::WHITE;
 int totalBarriers = 0;
-
-
+// contains distance values to be represented in "3D" 
+double view[rayAmount]; 
+float viewWidth = 900 / rayAmount;
 
 bool withinMap(int x, int y)
 {
@@ -50,8 +65,8 @@ bool withinMap(int x, int y)
 };
 
 
-
-double calcDistance(int x1, int y1, int x2, int y2) // returns the distance between two points
+// returns the distance between two points
+double calcDistance(int x1, int y1, int x2, int y2)
 {
     return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
@@ -182,8 +197,8 @@ public:
 
 
 
-
-    bool creating = false;    // is true while button is held down
+    // is true while button is held down
+    bool creating = false;   
     Vec bVec1;
     Vec bVec2;
 
@@ -198,13 +213,15 @@ public:
         int mouseY = GetMouseY();
 
 
-
-        if (GetMouse(0).bPressed && (!creating && totalBarriers < barrierAmount) && withinMap(mouseX, mouseY))   // caches mouse position on mouse press
+        // caches mouse position on mouse press
+        if (GetMouse(0).bPressed && (!creating && totalBarriers < barrierAmount) && withinMap(mouseX, mouseY))   
         {
             creating = true;
             bVec1 = Vec(mouseX, mouseY);
         }
-        if (GetMouse(0).bReleased && creating && withinMap(mouseX, mouseY))   // caches mouse position on mouse release then creates barrier object
+
+        // caches mouse position on mouse release then creates barrier object
+        if (GetMouse(0).bReleased && creating && withinMap(mouseX, mouseY))   
         {
             const int totBar = totalBarriers;
             creating = false;
@@ -213,21 +230,24 @@ public:
             barriers[totBar] = c;
             totalBarriers++;
         }
-        if (GetMouse(1).bReleased && totalBarriers > 6) {  // undo barrier creation
+
+        // undo barrier creation
+        if (GetMouse(1).bReleased && totalBarriers > 6) {  
             const int totBar = --totalBarriers;
             barriers[totBar] = Barrier(0, 0, 0, 0, olc::BLANK);
         }
 
 
 
-
-        if (GetKey(olc::W).bHeld) // Moves forward relative to direction ray
+        // Moves forward relative to direction ray
+        if (GetKey(olc::W).bHeld)
         {
             for (int i = 0; i < rayAmount; i++)
             {
                 double directionVecX = directionRay.getDirVecX() * 1.15;
                 double directionVecY = directionRay.getDirVecY() * 1.15;
-                if (withinMap(rays[i].x + directionVecX, rays[i].y)) rays[i].x += directionVecX;  // check if within map seperatly so that if one returns false, the opposite can still move
+                // check if within map seperatly so that if one returns false, the opposite can still move
+                if (withinMap(rays[i].x + directionVecX, rays[i].y)) rays[i].x += directionVecX;  
                 if (withinMap(rays[i].x, rays[i].y + directionVecY)) rays[i].y += directionVecY;
                 if (withinMap(rays[i].x + directionVecX, rays[i].y) && i == 0) directionRay.x += directionRay.getDirVecX() * 1.15;
                 if (withinMap(rays[i].x, rays[i].y + directionVecY) && i == 0) directionRay.y += directionRay.getDirVecY() * 1.15;
@@ -235,8 +255,8 @@ public:
         }
 
 
-
-        if (GetKey(olc::A).bHeld) // rotates left
+        // rotates left
+        if (GetKey(olc::A).bHeld) 
         {
             for (int i = 0; i < rayAmount; i++)
             {
@@ -247,14 +267,15 @@ public:
 
 
 
-
-        if (GetKey(olc::S).bHeld) // Moves backwards relative to direction ray
+        // Moves backwards relative to direction ray
+        if (GetKey(olc::S).bHeld) 
         {
             for (int i = 0; i < rayAmount; i++)
             {
                 double directionVecX = directionRay.getDirVecX() * 1.15;
                 double directionVecY = directionRay.getDirVecY() * 1.15;
-                    if (withinMap(rays[i].x - directionVecX, rays[i].y)) rays[i].x -= directionVecX; // check if within map seperatly so that if one returns false, the opposite can still move
+                // check if within map seperatly so that if one returns false, the opposite can still move
+                    if (withinMap(rays[i].x - directionVecX, rays[i].y)) rays[i].x -= directionVecX;
                     if (withinMap(rays[i].x, rays[i].y - directionVecY)) rays[i].y -= directionVecY;
                     if (withinMap(rays[i].x - directionVecX, rays[i].y) && i == 0) directionRay.x -= directionRay.getDirVecX() * 1.15;
                     if (withinMap(rays[i].x, rays[i].y - directionVecY) && i == 0) directionRay.y -= directionRay.getDirVecY() * 1.15;
@@ -265,8 +286,8 @@ public:
         }
 
 
-
-        if (GetKey(olc::D).bHeld) // rotates right
+        // rotates right
+        if (GetKey(olc::D).bHeld)
         {
             for (int i = 0; i < rayAmount; i++)
             {
@@ -285,28 +306,34 @@ public:
 
 
 
-
-        for (int i = 0; i < rayAmount; i++) { // for each ray
+        // for each ray
+        for (int i = 0; i < rayAmount; i++) {
             Ray ray = rays[i];
             int x1 = ray.x;
             int y1 = ray.y;
             double x2 = (ray.getDirVecX() * rayLength) + x1;
             double y2 = (ray.getDirVecY() * rayLength) + y1;
-            double distance = (float) INFINITE;
+            double distance = (double) INFINITE;
             olc::Pixel color = ray.color;
 
 
 
+            // contains each of the ray's intersection points
+            Vec intersections[barrierAmount];   
 
-            Vec intersections[barrierAmount];
 
 
-            for (int i = 0; i < barrierAmount; i++) { // Checks for intersection
+
+            // Checks for intersection
+            for (int i = 0; i < barrierAmount; i++) { 
                 Barrier barrier = barriers[i];
                 intersections[i] = barrier.checkIntersection((int)x1, (int)y1, (int)x2, (int)y2);
             }
 
-            for (int i = 0; i < barrierAmount; i++) {  // Get closest point of intersection
+
+
+            // Get closest point of intersection
+            for (int i = 0; i < barrierAmount; i++) {  
                 Vec obj = intersections[i];
                 double newDistance = calcDistance(x1, y1, (int)obj.x, (int)obj.y);
 
@@ -319,20 +346,59 @@ public:
                 }
             }
 
-            DrawLine(x1, y1, (int)x2, (int)y2, color);  // Draw ray
-         //  FillCircle(x2, y2, 3, olc::GREEN); // Intersection points
+
+            // Draw ray
+            DrawLine(x1, y1, (int)x2, (int)y2, color);  
+
+
+            // Defines the distance from each intersection point within the view array
+            view[i] = distance;
+
+
+            // Intersection points
+         //  FillCircle(x2, y2, 3, olc::GREEN); 
         }
 
 
-        for (int i = 0; i < barrierAmount; i++) {  // Draws barriers
+
+
+
+        
+        // Draws 3D representation
+        for (int i = 0; i < rayAmount; i++) 
+        {
+            // least distance == 0
+            // max distance == 300
+            int height1 = 1;
+            int height2 = screenHeight-1;
+            double d = view[i];
+            int amt = ((int) d / (300 / 255)) - 60;
+            if (amt > 255) amt = 255;
+            if (amt < 0) amt = 0;
+
+            olc::Pixel color = olc::Pixel(255, 255, 255);
+            color.r -= amt;
+            color.g -= amt;
+            color.b -= amt;
+             
+            height1 += amt;
+            height2 -= amt;
+
+            FillRect(i * viewWidth, height1, viewWidth, height2, color);
+        }
+
+
+        // Draws barriers
+        for (int i = 0; i < barrierAmount; i++) {  
             Barrier b = barriers[i];
             DrawLine(b.x1, b.y1, b.x2, b.y2, b.color);
         }
 
 
-
-        DrawLine(directionRay.x, directionRay.y, directionRay.x + directionRay.getDirVecX() * 100, directionRay.y + directionRay.getDirVecY() * 100, directionRay.color);  // Draw direction line
-        FillCircle(directionRay.x, directionRay.y, 4, olc::GREEN);  // Draw player on 2d Map
+        // Draw direction line
+        DrawLine(directionRay.x, directionRay.y, directionRay.x + directionRay.getDirVecX() * 100, directionRay.y + directionRay.getDirVecY() * 100, directionRay.color);  
+         // Draw player on 2d Map
+        FillCircle(directionRay.x, directionRay.y, 4, olc::GREEN); 
 
 
         return true;
